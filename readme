@@ -1,0 +1,32 @@
+# Instalaciones necesarias
+npm i express pg 
+
+#Instalar nodemon solo para desarrollo para no tener que estar reiniciando el servidor por cada cambio
+npm i nodemon -D
+
+# Instalar variables de entorno
+npm i dotenv -D
+
+# Instalar cors, nos sirve para configurar el servidor para que se puedan hacer peticiones desde otros dominios
+npm install cors --save
+
+# Instalar history 
+npm install --save connect-history-api-fallback
+
+# Instalar morgan, nor sirve para visualizar en la consola las peticiones que se hagan al servidor
+npm i morgan --save
+
+# Instalar es6 para habilitar los nuevos entornos de node
+yarn add esm / npm install esm
+
+# instalar history 
+npm install --save connect-history-api-fallback
+
+# instalar body-parser
+npm i --save body-parser
+
+# instalar fs
+npm install --save fs
+
+# instalar https
+npm install -save https
