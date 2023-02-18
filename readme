@@ -13,7 +13,7 @@ npm install cors --save
 # Instalar history 
 npm install --save connect-history-api-fallback
 
-# Instalar morgan, nor sirve para visualizar en la consola las peticiones que se hagan al servidor
+# Instalar morgan, nos sirve para visualizar en la consola las peticiones que se hagan al servidor
 npm i morgan --save
 
 # Instalar es6 para habilitar los nuevos entornos de node

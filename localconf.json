@@ -57,6 +57,40 @@
                 "user":"loxacloud.soporte@gmail.com",
                 "password":"fzacuagyvlrknbkv"
             }
+        },
+        {
+            "codigo_empresa":4,
+            "host":"192.168.50.7",
+            "port":"5432",
+            "database":"reclamos",        
+            "user":"postgres",
+            "password":"01061979",        
+            "max":20,
+            "url_redirect":"http://localhost:3008/#/login",
+            "email":{                
+                "host":"smtp.gmail.com",
+                "port":587,
+                "secure":false,
+                "user":"loxacloud.soporte@gmail.com",
+                "password":"fzacuagyvlrknbkv"
+            }
+        },
+        {
+            "codigo_empresa":5,
+            "host":"127.0.0.1",
+            "port":"5432",
+            "database":"apromed",        
+            "user":"postgres",
+            "password":"01061979",        
+            "max":20,
+            "url_redirect":"http://localhost:3008/#/login",
+            "email":{                
+                "host":"smtp.gmail.com",
+                "port":587,
+                "secure":false,
+                "user":"loxacloud.soporte@gmail.com",
+                "password":"fzacuagyvlrknbkv"
+            }
         }
     ]        
 }

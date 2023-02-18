@@ -71,3 +71,48 @@ export const enviarEmail = async (payload) => {
         return {ok:false, id:undefined, mensaje:deducirMensajeError(error)};        
     }    
 }
+
+export function codify(_value) {
+    _value = _value.trim();
+    let posicionRecorrido = 0;
+    let longitudCadena = _value.length;
+    let valorLetraenCurso = 0;
+    let claveEncriptada = "";
+    while (posicionRecorrido < longitudCadena) {
+        valorLetraenCurso = _value.charCodeAt(posicionRecorrido);
+        valorLetraenCurso = (valorLetraenCurso * 2) - 5;
+        let letraCHR = String.fromCharCode(valorLetraenCurso);
+        claveEncriptada = claveEncriptada + letraCHR;
+        posicionRecorrido++;
+    }
+    return claveEncriptada;
+}
+
+export function deCodify(_value) {
+    _value = _value.trim();
+    let posicionRecorrido = 0;
+    let longitudCadena = _value.length;
+    let valorLetraenCurso = 0;
+    let claveDesencriptada = "";
+    while (posicionRecorrido < longitudCadena) {
+        valorLetraenCurso = _value.charCodeAt(posicionRecorrido);
+        valorLetraenCurso = (valorLetraenCurso + 5) / 2;
+        let letraCHR = String.fromCharCode(valorLetraenCurso);
+        claveDesencriptada = claveDesencriptada + letraCHR;
+        posicionRecorrido++;
+    }
+    return claveDesencriptada;
+}
+
+export function formatoFecha(date) {
+  let d = new Date(date),
+		mes = '' + (d.getMonth() + 1),
+		dia = '' + d.getDate(),
+		anio = d.getFullYear();
+	if (mes.length < 2) 
+		mes = '0' + mes;
+	if (dia.length < 2) 
+		dia = '0' + dia;
+
+	return [anio, mes, dia].join('-');
+} 
