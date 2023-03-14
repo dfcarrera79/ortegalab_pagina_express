@@ -1,13 +1,26 @@
-import { CLIENT_RENEG_LIMIT } from "tls";
 import dbSession from "../../../pool";
 import { deducirMensajeError, formatoFecha } from "../../../utils";
 import formidable from "formidable";
 import path from "path";
 
+export const obtenerProductos = async (req, res) => {
+  const pool = dbSession(5);
+  const codigo = req.params.codigo;
+  const sql = `SELECT TArticulo.art_codigo, TArticulo.art_codbar, TArticulo.art_nomlar, TDetEgre.dt_cant, TDetEgre.dt_lote, TDetEgre.dt_fecha, TDetEgre.conteo_pedido 
+	FROM articulo.TArticulo INNER JOIN comun.TDetEgre ON TArticulo.art_codigo = TDetEgre.art_codigo AND TDetEgre.trn_codigo = ${codigo} ORDER BY TArticulo.art_nomlar`;
+  try {
+    const { rows } = await pool.query(sql);
+    res.send({ error: "N", mensaje: "", objetos: rows });
+  } catch (error) {
+    res.send({ error: "S", mensaje: deducirMensajeError(error) });
+  } finally {
+    pool.end();
+  }
+};
 
 const obtenerFactura = async (ruc_cliente, numero_factura) => {
   const pool = dbSession(5);
-  const sql = `SELECT TEgreso.trn_compro AS no_factura, TEgreso.trn_fecreg AS fecha_factura, TReferente.clp_cedruc AS ruc_cliente, TReferente.clp_descri AS razon_social, TReferente.clp_contacto AS nombre_comercial, TReferente.clp_calles AS direccion, TReferente.ciu_descri AS ciudad, TReferente.celular AS telefonos, TReferente.email, TEgreso.trn_codigo FROM comun.TEgreso INNER JOIN referente.TReferente ON TEgreso.clp_codigo = TReferente.clp_codigo WHERE TRIM(TReferente.clp_cedruc) LIKE '${ruc_cliente}' AND TRIM(TEgreso.trn_compro) LIKE '${numero_factura}' AND TEgreso.doc_codigo = 1 AND TEgreso.trn_valido = 0`;
+  const sql = `SELECT TEgreso.trn_compro AS no_factura, TEgreso.trn_fecreg AS fecha_factura, TReferente.clp_cedruc AS ruc_cliente, TReferente.clp_descri AS razon_social, TReferente.clp_contacto AS nombre_comercial, TReferente.clp_calles AS direccion, TReferente.ciu_descri AS ciudad, TReferente.celular AS telefonos, TReferente.email, TEgreso.  FROM comun.TEgreso INNER JOIN referente.TReferente ON TEgreso.clp_codigo = TReferente.clp_codigo WHERE TRIM(TReferente.clp_cedruc) LIKE '${ruc_cliente}' AND TRIM(TEgreso.trn_compro) LIKE '${numero_factura}' AND TEgreso.doc_codigo = 1 AND TEgreso.trn_valido = 0`;
   try {
     const { rows } = await pool.query(sql);
     if (rows.length === 0) {
@@ -158,8 +171,6 @@ export const obtenerReclamosPorEstado = async (req, res) => {
 
   sql += ` ORDER BY id_reclamo FETCH FIRST 50 ROWS ONLY`;
 
-  console.log(sql);
-
   try {
     const { rows } = await pool.query(sql);
 
@@ -190,12 +201,6 @@ export const actualizarEstado = async (req, res) => {
   const pool = dbSession(4);
   const { id_reclamo, estado, login_usuario, nombre_usuario, respuesta_finalizado } = req.body;
 
-  console.log("id_reclamo:", id_reclamo);
-  console.log("estado:", estado);
-  console.log("login_usuario:", login_usuario);
-  console.log("nombre_usuario:", login_usuario);
-  console.log("respuesta_finalizado:", respuesta_finalizado);
-
   let sql = "";
 
   if (estado === "PEN") {
@@ -210,7 +215,6 @@ export const actualizarEstado = async (req, res) => {
   if (estado === "FIN") {
     const fecha = new Date().toJSON();
     sql = `UPDATE reclamo SET estado='FIN', fecha_finalizado='${fecha}', login_usuario='${login_usuario}', nombre_usuario='${nombre_usuario}', respuesta_finalizado='${respuesta_finalizado}' WHERE id_reclamo='${id_reclamo}' RETURNING id_reclamo`;
-    console.log(sql);
   }
 
   try {
@@ -259,7 +263,6 @@ export const obtenerArchivos = async (req, res) => {
   const pool = dbSession(codigo_empresa);
   const id_detalle = req.params.id;
   const sql = `SELECT path FROM archivo WHERE id_detalle=${id_detalle}`;
-  console.log(sql);
   try {
     const { rows } = await pool.query(sql);
     res.send({ error: "N", mensaje: "", objetos: rows });
