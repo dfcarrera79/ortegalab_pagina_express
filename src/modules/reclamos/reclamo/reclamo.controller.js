@@ -3,24 +3,9 @@ import { deducirMensajeError, formatoFecha } from "../../../utils";
 import formidable from "formidable";
 import path from "path";
 
-export const obtenerProductos = async (req, res) => {
-  const pool = dbSession(5);
-  const codigo = req.params.codigo;
-  const sql = `SELECT TArticulo.art_codigo, TArticulo.art_codbar, TArticulo.art_nomlar, TDetEgre.dt_cant, TDetEgre.dt_lote, TDetEgre.dt_fecha, TDetEgre.conteo_pedido 
-	FROM articulo.TArticulo INNER JOIN comun.TDetEgre ON TArticulo.art_codigo = TDetEgre.art_codigo AND TDetEgre.trn_codigo = ${codigo} ORDER BY TArticulo.art_nomlar`;
-  try {
-    const { rows } = await pool.query(sql);
-    res.send({ error: "N", mensaje: "", objetos: rows });
-  } catch (error) {
-    res.send({ error: "S", mensaje: deducirMensajeError(error) });
-  } finally {
-    pool.end();
-  }
-};
-
 const obtenerFactura = async (ruc_cliente, numero_factura) => {
   const pool = dbSession(5);
-  const sql = `SELECT TEgreso.trn_compro AS no_factura, TEgreso.trn_fecreg AS fecha_factura, TReferente.clp_cedruc AS ruc_cliente, TReferente.clp_descri AS razon_social, TReferente.clp_contacto AS nombre_comercial, TReferente.clp_calles AS direccion, TReferente.ciu_descri AS ciudad, TReferente.celular AS telefonos, TReferente.email, TEgreso.  FROM comun.TEgreso INNER JOIN referente.TReferente ON TEgreso.clp_codigo = TReferente.clp_codigo WHERE TRIM(TReferente.clp_cedruc) LIKE '${ruc_cliente}' AND TRIM(TEgreso.trn_compro) LIKE '${numero_factura}' AND TEgreso.doc_codigo = 1 AND TEgreso.trn_valido = 0`;
+  const sql = `SELECT TEgreso.trn_compro AS no_factura, TEgreso.trn_fecreg AS fecha_factura, TReferente.clp_cedruc AS ruc_cliente, TReferente.clp_descri AS razon_social, TReferente.clp_contacto AS nombre_comercial, TReferente.clp_calles AS direccion, TReferente.ciu_descri AS ciudad, TReferente.celular AS telefonos, TReferente.email, TEgreso.trn_codigo FROM comun.TEgreso INNER JOIN referente.TReferente ON TEgreso.clp_codigo = TReferente.clp_codigo WHERE TRIM(TReferente.clp_cedruc) LIKE '${ruc_cliente}' AND TRIM(TEgreso.trn_compro) LIKE '${numero_factura}' AND TEgreso.doc_codigo = 1 AND TEgreso.trn_valido = 0`;
   try {
     const { rows } = await pool.query(sql);
     if (rows.length === 0) {
@@ -43,9 +28,33 @@ const obtenerFactura = async (ruc_cliente, numero_factura) => {
   }
 };
 
+export const obtenerProductos = async (req, res) => {
+  const pool = dbSession(5);
+  const ruc_reclamante = req.query.ruc_reclamante;
+  const no_factura = req.query.no_factura;
+  const respuesta = await obtenerFactura(ruc_reclamante, no_factura);
+  if (respuesta.error === "S") {
+    res.send(respuesta);
+    return;
+  }
+  const factura = respuesta.objetos;
+  const sql = `SELECT TArticulo.art_codigo, TArticulo.art_codbar, TArticulo.art_nomlar, TDetEgre.dt_cant, TDetEgre.dt_lote, TDetEgre.dt_fecha, TDetEgre.conteo_pedido FROM articulo.TArticulo INNER JOIN comun.TDetEgre ON TArticulo.art_codigo = TDetEgre.art_codigo AND TDetEgre.trn_codigo = ${factura.trn_codigo} ORDER BY TArticulo.art_nomlar`;
+  console.log('sql: ', sql)
+  try {
+    const { rows } = await pool.query(sql);
+
+    res.send({ error: "N", mensaje: "", objetos: rows });
+    
+  } catch (error) {
+    res.send({ error: "S", mensaje: deducirMensajeError(error) });
+  } finally {
+    pool.end();
+  }
+};
+
 export const crearDetalle = async (req, res) => {
   const pool = dbSession(4);
-  const { tipo, no_factura, id_motivo, comentario, ruc_reclamante } = req.body;
+  const { tipo, no_factura, reclamos, ruc_reclamante } = req.body;
   const respuesta = await obtenerFactura(ruc_reclamante, no_factura);
   if (respuesta.error === "S") {
     res.send(respuesta);
@@ -71,9 +80,12 @@ export const crearDetalle = async (req, res) => {
           "El reclamo ya está finalizado, no es posible agregar detalles",
         objetos: { id_reclamo, estado, razon_social },
       });
+      return;
     }
-    sql = `INSERT INTO detalle_reclamo VALUES(DEFAULT, '${id_reclamo}', '${id_motivo}', '${tipo}', '${comentario}', current_timestamp, '${ruc_reclamante}', '${razon_social}') RETURNING id_detalle`;
+    sql = `INSERT INTO detalle_reclamo VALUES(DEFAULT, '${id_reclamo}', '${tipo}', '${reclamos}', current_timestamp, '${ruc_reclamante}', '${razon_social}') RETURNING id_detalle`;
+    console.log('[QUERY]: ', sql);
     rows = await pool.query(sql);
+    console.log('[ROWS]', rows);
     let id = rows.rows[0].id_detalle;
     res.send({
       error: "N",
@@ -81,6 +93,7 @@ export const crearDetalle = async (req, res) => {
       objetos: rows.rows[0].id_detalle,
     });
   } catch (error) {
+    console.log('[ERROR]: ', error);
     res.send({ error: "S", mensaje: deducirMensajeError(error) });
   } finally {
     pool.end();
@@ -96,10 +109,9 @@ export const obtenerReclamoPorRuc = async (req, res) => {
   const desde = req.query.desde;
   const hasta = req.query.hasta;
 
-  let sql = `SELECT reclamo.estado, ruc_reclamante, reclamo.no_factura, reclamo.id_reclamo, reclamo.fecha_reclamo, reclamo.fecha_factura, motivo.nombre_motivo, reclamo.fecha_reclamo, nombre_reclamante, comentario, id_detalle, reclamo.nombre_usuario, reclamo.fecha_enproceso, reclamo.fecha_finalizado, reclamo.respuesta_finalizado
+  let sql = `SELECT reclamo.estado, ruc_reclamante, reclamo.no_factura, reclamo.id_reclamo, reclamo.fecha_reclamo, reclamo.fecha_factura, reclamo.fecha_reclamo, nombre_reclamante, id_detalle, reclamo.nombre_usuario, reclamo.fecha_enproceso, reclamo.fecha_finalizado, reclamo.respuesta_finalizado, reclamos
   FROM detalle_reclamo 
   JOIN reclamo ON detalle_reclamo.id_reclamo = reclamo.id_reclamo 
-  JOIN motivo ON detalle_reclamo.id_motivo = motivo.id_motivo 
   WHERE ruc_reclamante='${ruc}'`;
 
   if (factura !== undefined) {
@@ -114,7 +126,7 @@ export const obtenerReclamoPorRuc = async (req, res) => {
     sql += `AND reclamo.fecha_reclamo BETWEEN '${desde}' AND '${hasta}'`;
   }
 
-  sql += ` ORDER BY id_reclamo FETCH FIRST 50 ROWS ONLY`;
+  sql += ` ORDER BY id_reclamo`;
 
   try {
     const { rows } = await pool.query(sql);
@@ -151,10 +163,9 @@ export const obtenerReclamosPorEstado = async (req, res) => {
   const desde = req.query.desde;
   const hasta = req.query.hasta;
 
-  let sql = `SELECT reclamo.id_reclamo, ruc_reclamante, reclamo.no_factura, reclamo.fecha_reclamo, reclamo.fecha_factura, motivo.nombre_motivo, reclamo.fecha_reclamo, nombre_reclamante, comentario, id_detalle, reclamo.nombre_usuario, reclamo.fecha_enproceso, reclamo.fecha_finalizado, reclamo.respuesta_finalizado
+  let sql = `SELECT id_detalle, reclamo.id_reclamo, reclamo.fecha_reclamo, nombre_reclamante, ruc_reclamante, reclamo.no_factura, reclamo.fecha_factura,reclamo.fecha_enproceso, reclamo.fecha_finalizado, reclamo.respuesta_finalizado, reclamo.nombre_usuario, reclamos
   FROM detalle_reclamo 
   JOIN reclamo ON detalle_reclamo.id_reclamo = reclamo.id_reclamo 
-  JOIN motivo ON detalle_reclamo.id_motivo = motivo.id_motivo 
   WHERE reclamo.estado LIKE '${estado}'`;
 
   if (factura !== undefined) {
@@ -169,7 +180,7 @@ export const obtenerReclamosPorEstado = async (req, res) => {
     sql += ` AND reclamo.fecha_reclamo BETWEEN '${desde}' AND '${hasta}'`;
   }
 
-  sql += ` ORDER BY id_reclamo FETCH FIRST 50 ROWS ONLY`;
+  sql += ` ORDER BY id_reclamo`;
 
   try {
     const { rows } = await pool.query(sql);
@@ -242,6 +253,61 @@ export const subirFotos = async (req, res) => {
   });
 };
 
+export const subirArchivo = async (req, res) => {
+  const form = new formidable.IncomingForm();
+  const directorio = path.join(__dirname, '../../../../public/imagenes_reclamos');
+  form.uploadDir = directorio;
+  form.options.keepExtensions = true;
+  form.parse(req, async (_, fields, files) => {
+    res.send({ fields, files })
+  });
+};
+
+export const registrarArchivo = async (req, res) => {
+  const pool = dbSession(4);
+  const { filepath } = req.body;
+  const sql = `INSERT INTO archivo (id_detalle, path) VALUES(0, '${filepath}') returning id_archivo`;
+
+  try {
+    const { rows } = await pool.query(sql);
+    res.send({ error: "N", mensaje: "", objetos: rows });
+  } catch (error) {
+    res.send({ error: "S", mensaje: deducirMensajeError(error) });
+  } finally {
+    pool.end();
+  }
+
+};
+
+export const eliminarArchivos = async (req, res) => {
+  const pool = dbSession(4);
+  const sql = `DELETE FROM archivo WHERE id_detalle = 0`;
+  try {
+    const { rows } = await pool.query(sql);
+    res.send({ error: "N", mensaje: "", objetos: rows });
+  } catch (error) {
+    res.send({ error: "S", mensaje: deducirMensajeError(error) });
+  } finally {
+    pool.end();
+  }
+};
+
+export const actualizarArchivos = async (req, res) => {
+  const pool = dbSession(4);
+  const { id_detalle, id_archivo } = req.body;
+  const sql = `UPDATE archivo SET id_detalle = ${id_detalle} WHERE id_archivo = ${id_archivo}`;
+  console.log(sql);
+  try {
+    const { rows } = await pool.query(sql);
+    res.send({ error: "N", mensaje: "", objetos: rows });
+  } catch (error) {
+    res.send({ error: "S", mensaje: deducirMensajeError(error) });
+  } finally {
+    pool.end();
+  }
+};
+
+
 export const actualizarArchivo = async (req, res) => {
   const pool = dbSession(4);
   const { id_detalle, filepath } = req.body;
@@ -261,8 +327,8 @@ export const actualizarArchivo = async (req, res) => {
 export const obtenerArchivos = async (req, res) => {
   const { codigo_empresa } = req.headers;
   const pool = dbSession(codigo_empresa);
-  const id_detalle = req.params.id;
-  const sql = `SELECT path FROM archivo WHERE id_detalle=${id_detalle}`;
+  const id_archivo = req.params.id;
+  const sql = `SELECT path FROM archivo WHERE id_archivo=${id_archivo}`;
   try {
     const { rows } = await pool.query(sql);
     res.send({ error: "N", mensaje: "", objetos: rows });
@@ -272,3 +338,4 @@ export const obtenerArchivos = async (req, res) => {
     pool.end();
   }
 };
+
