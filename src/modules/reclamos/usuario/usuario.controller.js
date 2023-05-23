@@ -7,10 +7,6 @@ export const validarUsuario = async (req, res) => {
   const clave = req.query.clave;
   const appCodigo = parseInt(req.query.appCodigo);
 
-  console.log(id);
-  console.log(clave);
-  console.log(appCodigo);
-
   if (appCodigo === 1) {
     res.send(await validarCliente(id, clave));
   } else if (appCodigo === 2) {

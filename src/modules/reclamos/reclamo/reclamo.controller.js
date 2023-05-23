@@ -39,7 +39,6 @@ export const obtenerProductos = async (req, res) => {
   }
   const factura = respuesta.objetos;
   const sql = `SELECT TArticulo.art_codigo, TArticulo.art_codbar, TArticulo.art_nomlar, TDetEgre.dt_cant, TDetEgre.dt_lote, TDetEgre.dt_fecha, TDetEgre.conteo_pedido FROM articulo.TArticulo INNER JOIN comun.TDetEgre ON TArticulo.art_codigo = TDetEgre.art_codigo AND TDetEgre.trn_codigo = ${factura.trn_codigo} ORDER BY TArticulo.art_nomlar`;
-  console.log('sql: ', sql)
   try {
     const { rows } = await pool.query(sql);
 
@@ -83,9 +82,8 @@ export const crearDetalle = async (req, res) => {
       return;
     }
     sql = `INSERT INTO detalle_reclamo VALUES(DEFAULT, '${id_reclamo}', '${tipo}', '${reclamos}', current_timestamp, '${ruc_reclamante}', '${razon_social}') RETURNING id_detalle`;
-    console.log('[QUERY]: ', sql);
+    console.log('[SQL]: ', sql);
     rows = await pool.query(sql);
-    console.log('[ROWS]', rows);
     let id = rows.rows[0].id_detalle;
     res.send({
       error: "N",
@@ -93,7 +91,6 @@ export const crearDetalle = async (req, res) => {
       objetos: rows.rows[0].id_detalle,
     });
   } catch (error) {
-    console.log('[ERROR]: ', error);
     res.send({ error: "S", mensaje: deducirMensajeError(error) });
   } finally {
     pool.end();
@@ -114,16 +111,16 @@ export const obtenerReclamoPorRuc = async (req, res) => {
   JOIN reclamo ON detalle_reclamo.id_reclamo = reclamo.id_reclamo 
   WHERE ruc_reclamante='${ruc}'`;
 
-  if (factura !== undefined) {
+  if (factura !== undefined && factura !== '') {
     sql += ` AND reclamo.no_factura LIKE '${factura}'`;
   }
 
-  if (estado !== undefined) {
+  if (estado !== undefined && factura !== '') {
     sql += ` AND reclamo.estado LIKE '${estado}'`;
   }
 
-  if (desde !== undefined && hasta !== undefined) {
-    sql += `AND reclamo.fecha_reclamo BETWEEN '${desde}' AND '${hasta}'`;
+  if (desde !== undefined && desde !== '' && hasta !== undefined && hasta !== '') {
+    sql += `AND CAST(reclamo.fecha_reclamo AS DATE) BETWEEN '${desde}' AND '${hasta}'`;
   }
 
   sql += ` ORDER BY id_reclamo`;
@@ -168,22 +165,23 @@ export const obtenerReclamosPorEstado = async (req, res) => {
   JOIN reclamo ON detalle_reclamo.id_reclamo = reclamo.id_reclamo 
   WHERE reclamo.estado LIKE '${estado}'`;
 
-  if (factura !== undefined) {
+  if (factura !== undefined && factura !== '') {
     sql += ` AND reclamo.no_factura LIKE '${factura}'`;
   }
 
-  if (ruc !== undefined) {
+  if (ruc !== undefined && factura !== '') {
     sql += ` AND reclamo.ruc_cliente='${ruc}'`;
   }
 
-  if (desde !== undefined && hasta !== undefined) {
-    sql += ` AND reclamo.fecha_reclamo BETWEEN '${desde}' AND '${hasta}'`;
-  }
+  if (desde !== undefined && desde !== '' && hasta !== undefined && hasta !== '') {
+    sql += ` AND CAST(reclamo.fecha_reclamo AS DATE) BETWEEN '${desde}' AND '${hasta}'`;
+  } 
 
   sql += ` ORDER BY id_reclamo`;
 
   try {
     const { rows } = await pool.query(sql);
+    console.log('[ROWS]: ', rows);
 
     if (rows[0] !== undefined) {
       const { ruc_reclamante, fecha_factura } = rows[0];
@@ -220,7 +218,7 @@ export const actualizarEstado = async (req, res) => {
 
   if (estado === "PRO") {
     const fecha = new Date().toJSON();
-    sql = `UPDATE reclamo SET estado='PRO', fecha_enproceso='${fecha}', login_usuario='${login_usuario}', nombre_usuario='${nombre_usuario}' WHERE id_reclamo='${id_reclamo}' RETURNING id_reclamo`;
+    sql = `UPDATE reclamo SET estado='PRO', fecha_finalizado='${fecha}', login_usuario='${login_usuario}', nombre_usuario='${nombre_usuario}', respuesta_finalizado='${respuesta_finalizado}' WHERE id_reclamo='${id_reclamo}' RETURNING id_reclamo`;
   }
 
   if (estado === "FIN") {
@@ -296,7 +294,6 @@ export const actualizarArchivos = async (req, res) => {
   const pool = dbSession(4);
   const { id_detalle, id_archivo } = req.body;
   const sql = `UPDATE archivo SET id_detalle = ${id_detalle} WHERE id_archivo = ${id_archivo}`;
-  console.log(sql);
   try {
     const { rows } = await pool.query(sql);
     res.send({ error: "N", mensaje: "", objetos: rows });
@@ -312,7 +309,7 @@ export const actualizarArchivo = async (req, res) => {
   const pool = dbSession(4);
   const { id_detalle, filepath } = req.body;
   const sql = `INSERT INTO archivo (id_detalle, path) VALUES(${id_detalle}, '${filepath}')`;
-
+  console.log(sql);
   try {
     const { rows } = await pool.query(sql);
     res.send({ error: "N", mensaje: "", objetos: rows });
