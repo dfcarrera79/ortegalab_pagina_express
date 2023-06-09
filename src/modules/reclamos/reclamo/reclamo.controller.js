@@ -33,7 +33,7 @@ export const obtenerProductos = async (req, res) => {
   const ruc_reclamante = req.query.ruc_reclamante;
   const no_factura = req.query.no_factura;
   const respuesta = await obtenerFactura(ruc_reclamante, no_factura);
-  if (respuesta.error === "S") {
+  if (respuesta.error === "S" || respuesta.objetos.length === 0) {
     res.send(respuesta);
     return;
   }
@@ -82,7 +82,6 @@ export const crearDetalle = async (req, res) => {
       return;
     }
     sql = `INSERT INTO detalle_reclamo VALUES(DEFAULT, '${id_reclamo}', '${tipo}', '${reclamos}', current_timestamp, '${ruc_reclamante}', '${razon_social}') RETURNING id_detalle`;
-    console.log('[SQL]: ', sql);
     rows = await pool.query(sql);
     let id = rows.rows[0].id_detalle;
     res.send({
@@ -160,7 +159,7 @@ export const obtenerReclamosPorEstado = async (req, res) => {
   const desde = req.query.desde;
   const hasta = req.query.hasta;
 
-  let sql = `SELECT id_detalle, reclamo.id_reclamo, reclamo.fecha_reclamo, nombre_reclamante, ruc_reclamante, reclamo.no_factura, reclamo.fecha_factura,reclamo.fecha_enproceso, reclamo.fecha_finalizado, reclamo.respuesta_finalizado, reclamo.nombre_usuario, reclamos
+  let sql = `SELECT id_detalle, reclamo.id_reclamo, reclamo.fecha_reclamo, nombre_reclamante, ruc_reclamante, reclamo.no_factura, reclamo.fecha_factura,reclamo.fecha_enproceso, reclamo.fecha_finalizado, reclamo.respuesta_finalizado, reclamo.nombre_usuario, reclamo.email, reclamos
   FROM detalle_reclamo 
   JOIN reclamo ON detalle_reclamo.id_reclamo = reclamo.id_reclamo 
   WHERE reclamo.estado LIKE '${estado}'`;
@@ -181,7 +180,6 @@ export const obtenerReclamosPorEstado = async (req, res) => {
 
   try {
     const { rows } = await pool.query(sql);
-    console.log('[ROWS]: ', rows);
 
     if (rows[0] !== undefined) {
       const { ruc_reclamante, fecha_factura } = rows[0];
@@ -217,12 +215,12 @@ export const actualizarEstado = async (req, res) => {
   }
 
   if (estado === "PRO") {
-    const fecha = new Date().toJSON();
-    sql = `UPDATE reclamo SET estado='PRO', fecha_finalizado='${fecha}', login_usuario='${login_usuario}', nombre_usuario='${nombre_usuario}', respuesta_finalizado='${respuesta_finalizado}' WHERE id_reclamo='${id_reclamo}' RETURNING id_reclamo`;
+    const fecha = new Date().toISOString();
+    sql = `UPDATE reclamo SET estado='PRO', fecha_enproceso='${fecha}', login_usuario='${login_usuario}', nombre_usuario='${nombre_usuario}', respuesta_finalizado='${respuesta_finalizado}' WHERE id_reclamo='${id_reclamo}' RETURNING id_reclamo`;
   }
 
   if (estado === "FIN") {
-    const fecha = new Date().toJSON();
+    const fecha = new Date().toISOString();
     sql = `UPDATE reclamo SET estado='FIN', fecha_finalizado='${fecha}', login_usuario='${login_usuario}', nombre_usuario='${nombre_usuario}', respuesta_finalizado='${respuesta_finalizado}' WHERE id_reclamo='${id_reclamo}' RETURNING id_reclamo`;
   }
 
@@ -309,7 +307,6 @@ export const actualizarArchivo = async (req, res) => {
   const pool = dbSession(4);
   const { id_detalle, filepath } = req.body;
   const sql = `INSERT INTO archivo (id_detalle, path) VALUES(${id_detalle}, '${filepath}')`;
-  console.log(sql);
   try {
     const { rows } = await pool.query(sql);
     res.send({ error: "N", mensaje: "", objetos: rows });
