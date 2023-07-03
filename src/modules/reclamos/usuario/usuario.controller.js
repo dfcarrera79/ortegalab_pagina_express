@@ -1,6 +1,6 @@
 import { portalSuspended } from "pg-protocol/dist/messages";
 import dbSession from "../../../pool";
-import { codify, deCodify, deducirMensajeError } from "../../../utils";
+import { codify, generateRandomString, deducirMensajeError, enviarEmail } from "../../../utils";
 
 export const validarUsuario = async (req, res) => {
   const id = req.query.id;
@@ -18,18 +18,21 @@ export const validarUsuario = async (req, res) => {
 
 export const validarCliente = async (id, clave) => {
   const pool = dbSession(4);
-
   let sql = `SELECT * FROM usuario WHERE TRIM(ruc_cliente) LIKE '${id.trim()}'`;
+
   try {
     let { rows } = await pool.query(sql);
     if (rows.length === 0) {
-      let respuesta = obtenerClienteSistemaContable(id);
+      let respuesta = await obtenerClienteSistemaContable(id);
       if (respuesta.error === "S") {
         return respuesta;
       }
       const usuario = respuesta.objetos;
-      usuario.clave = codify(usuario.id);
-      respuesta = await crearUsuario(pool, usuario);
+
+      if(usuario[0].clave === null) {
+        let response = crearUsuario(usuario[0].ruc_cliente, usuario[0].razon_social, usuario[0].nombre_comercial);
+        return response;
+      }
       return respuesta;
     } else {
       const clienteApp = rows[0];
@@ -52,7 +55,7 @@ export const validarCliente = async (id, clave) => {
 
 const obtenerClienteSistemaContable = async (id) => {
   const pool = dbSession(5);
-  const sql = `SELECT clp_cedruc AS ruc_cliente, clp_descri AS razon_social, clp_contacto AS nombre_comercial, '' AS clave WHERE clp_cedruc LIKE '${id.trim()}'`;
+  const sql = `SELECT clp_cedruc AS ruc_cliente, clp_descri AS razon_social, clp_contacto AS nombre_comercial, clave FROM referente.TReferente WHERE clp_cedruc LIKE '${id.trim()}'`;
   try {
     const { rows } = await pool.query(sql);
     if (rows.length === 0) {
@@ -67,9 +70,31 @@ const obtenerClienteSistemaContable = async (id) => {
       return {
         error: "N",
         mensaje: "",
-        objetos: rows[0],
+        objetos: rows,
       };
     }
+  } catch (error) {
+    return { error: "S", mensaje: deducirMensajeError(error) };
+  } finally {
+    pool.end();
+  }
+};
+
+const crearUsuario = async (ruc_cliente, razon_social, nombre_comercial) => {
+  const pool = dbSession(4);
+  const sql = `INSERT INTO usuario (ruc_cliente, razon_social, nombre_comercial, clave) VALUES ('${ruc_cliente}', '${razon_social}', '${nombre_comercial}', '${codify(ruc_cliente)}')`;
+  try {
+    await pool.query(sql);
+    return {
+      error: "N",
+      mensaje: "",
+      objetos: {
+        ruc_cliente: ruc_cliente,
+        razon_social: razon_social,
+        nombre_comercial: nombre_comercial,
+        clave: codify(ruc_cliente),
+      },
+    };
   } catch (error) {
     return { error: "S", mensaje: deducirMensajeError(error) };
   } finally {
@@ -97,6 +122,60 @@ const obtenerUsuarioSistemaContable = async (id, clave) => {
           : `Hola ${usuario.razon_social}, la clave ingresada no es correcta`,
         objetos: ok ? usuario : undefined,
       };
+    }
+  } catch (error) {
+    return { error: "S", mensaje: deducirMensajeError(error) };
+  } finally {
+    pool.end();
+  }
+};
+
+export const cambiarClave = async (req, res) => {
+  const pool = dbSession(4);
+  const { ruc, clave } = req.body;
+  const nuevaClave = codify(clave);
+  const sql = `UPDATE usuario SET clave = '${nuevaClave}' WHERE ruc_cliente = '${ruc}' RETURNING ruc_cliente`;
+
+  try {
+    const { rows } = await pool.query(sql);
+    res.send({ error: "N", mensaje: "Clave cambiada exitosamente", objetos: rows[0] });
+  } catch (error) {
+    return { error: "S", mensaje: deducirMensajeError(error) };
+  } finally {
+    pool.end();
+  }
+
+};
+
+export const resetearClave = async (req, res) => {
+  const pool = dbSession(4);
+  try {
+    const data = req.body;
+    const { ruc, email } = data;
+    const clave = generateRandomString(10);
+    const subject = 'Nueva clave de acceso';
+    const message = `
+      <p>Estimad@, mediante el presente email le enviamos la nueva clave generada y le recomendamos cambiarla lo antes posible por una personal.</p>
+      <p><strong>Nueva clave: </strong>${clave}</p>
+      <p><a href='http://apromedfarmaloja-cloud.com:3008/#/resetear_clave/${ruc}'>Cambiar la clave de acceso</a></p>
+    `;
+
+    const payload = {
+      from: '"LoxaSoluciones" <soporte@loxasoluciones.com>',
+      emails: email,
+      subject,
+      message,
+      codigo_empresa: 5,
+    };
+
+    const response = await enviarEmail(payload);
+    const nueva_clave = codify(clave);
+    const sql = `UPDATE usuario SET clave = '${nueva_clave}' WHERE ruc_cliente = '${ruc}' RETURNING ruc_cliente`;
+
+    if (response.ok) {
+      // Assuming you have an active database connection/session
+      const { rows } = await pool.query(sql);
+      res.send({ error: "N", mensaje: "Clave cambiada exitosamente", objetos: rows[0] });
     }
   } catch (error) {
     return { error: "S", mensaje: deducirMensajeError(error) };

@@ -45,31 +45,40 @@ export function obtenerDataBase(codigo_empresa){
 }
 
 export const enviarEmail = async (payload) => {
-    const lista = payload.emails.join(', ');   
-    const email = configApp.databases.find(e => e.codigo_empresa === payload.codigo_empresa).email;    
-    try{
-        const transporter = nodemailer.createTransport({
-            host: email.host,
-            port: email.port,
-            secure: email.secure,
-            auth: {
-                user:email.user,
-                pass:email.password
-            },
-            tls: {                    
-                rejectUnauthorized: false,
-            },
-        });        
-        const info = await transporter.sendMail({
-            from: payload.from,
-            to: lista,
-            subject: payload.subject,
-            html: payload.message
-        });
-        return {ok:info.messageId, id:info.messageId, mensaje:''};        
-    }catch(error){
-        return {ok:false, id:undefined, mensaje:deducirMensajeError(error)};        
-    }    
+  try {
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: 'loxacloud.soporte@gmail.com',
+        pass: 'fzacuagyvlrknbkv'
+      },
+      tls: {                    
+        rejectUnauthorized: false,
+      },
+    });     
+    
+    const sendMailPromise = new Promise((resolve, reject) => {
+      transporter.sendMail({
+        from: payload.from,
+        to: payload.emails,
+        subject: payload.subject,
+        html: payload.message
+      }, (error, info) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(info);
+        }
+      });
+    });
+
+    await sendMailPromise;
+    return { ok: true, mensaje: '' };        
+  } catch (error) {
+    return { ok: false, id: undefined, mensaje: deducirMensajeError(error) };        
+  }    
 }
 
 export function codify(_value) {
