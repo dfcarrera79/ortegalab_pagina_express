@@ -12,6 +12,7 @@ import CreditosRoutes from './modules/socios/creditos/creditos.routes';
 import MotivoRoutes from './modules/reclamos/motivo/motivo.routes';
 import ReclamoRoutes from './modules/reclamos/reclamo/reclamo.routes';
 import UsuarioRoutes from './modules/reclamos/usuario/usuario.routes';
+import ArchivosRoutes from './modules/reclamos/archivos/archivos.routes';
 
 const morgan = require('morgan');
 // const formidable = require('formidable');
@@ -47,6 +48,7 @@ app.use('/v1/socios/creditos/', CreditosRoutes);
 app.use('/v1/reclamos/motivo', MotivoRoutes);
 app.use('/v1/reclamos/reclamo', ReclamoRoutes);
 app.use('/v1/reclamos/usuario', UsuarioRoutes);
+app.use('/v1/reclamos/archivos', ArchivosRoutes);
 
 // Init app
 const port = process.env.PORT || configApp.port_http;

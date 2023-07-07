@@ -1,4 +1,3 @@
-import { portalSuspended } from "pg-protocol/dist/messages";
 import dbSession from "../../../pool";
 import { codify, generateRandomString, deducirMensajeError, enviarEmail } from "../../../utils";
 
@@ -7,9 +6,9 @@ export const validarUsuario = async (req, res) => {
   const clave = req.query.clave;
   const appCodigo = parseInt(req.query.appCodigo);
 
-  if (appCodigo === 1) {
+  if (appCodigo === 1 || appCodigo === 4) {
     res.send(await validarCliente(id, clave));
-  } else if (appCodigo === 2) {
+  } else if (appCodigo === 2 || appCodigo === 3) {
     res.send(await obtenerUsuarioSistemaContable(id, clave));
   } else {
     res.send({ error: "S", mensaje: "El código de aplicaci{on no es correcto" });
