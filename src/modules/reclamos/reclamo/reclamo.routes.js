@@ -28,7 +28,6 @@ router.get("/obtener_archivos/:id", obtenerArchivos);
 router.delete("/eliminar_archivos", eliminarArchivos);
 router.put("/actualizar_archivos", actualizarArchivos);
 
-// router.get("/obtener_productos/:codigo", obtenerProductos);
 router.get("/obtener_productos/", obtenerProductos);
 router.get("/obtener_reclamo_por_ruc/:ruc", obtenerReclamoPorRuc);
 router.get("/obtener_reclamos_por_estado/:estado", obtenerReclamosPorEstado);

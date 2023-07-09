@@ -302,7 +302,6 @@ export const actualizarArchivos = async (req, res) => {
   }
 };
 
-
 export const actualizarArchivo = async (req, res) => {
   const pool = dbSession(4);
   const { id_detalle, filepath } = req.body;

@@ -13,6 +13,8 @@ import MotivoRoutes from './modules/reclamos/motivo/motivo.routes';
 import ReclamoRoutes from './modules/reclamos/reclamo/reclamo.routes';
 import UsuarioRoutes from './modules/reclamos/usuario/usuario.routes';
 import ArchivosRoutes from './modules/reclamos/archivos/archivos.routes';
+import DocumentosRoutes from './modules/reclamos/documentos/documentos.routes';
+import RegistrosRoutes from './modules/reclamos/registros/registros.routes';
 
 const morgan = require('morgan');
 // const formidable = require('formidable');
@@ -28,6 +30,7 @@ app.use(morgan('tiny'));
 app.use(cors());
 app.use(express.json());
 app.use('/static', express.static(path.join(__dirname, '../public/imagenes_reclamos')))
+app.use('/static', express.static(path.join(__dirname, '../public/documentos')))
 // app.use('/static', express.static('public'))
 // app.use(formidable);
 
@@ -49,6 +52,8 @@ app.use('/v1/reclamos/motivo', MotivoRoutes);
 app.use('/v1/reclamos/reclamo', ReclamoRoutes);
 app.use('/v1/reclamos/usuario', UsuarioRoutes);
 app.use('/v1/reclamos/archivos', ArchivosRoutes);
+app.use('/v1/reclamos/documentos', DocumentosRoutes);
+app.use('/v1/reclamos/registros', RegistrosRoutes);
 
 // Init app
 const port = process.env.PORT || configApp.port_http;
