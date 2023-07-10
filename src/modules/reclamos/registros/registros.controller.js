@@ -16,7 +16,7 @@ export const subirRegistro = async (req, res) => {
 export const grabarRegistro = async (req, res) => {
   const pool = dbSession(4);
   const { filepath, id_producto } = req.body;
-  const sql = `INSERT INTO registro (id_producto, path) VALUES('${id_producto}', '${filepath}') returning id_registro`;
+  const sql = `INSERT INTO documentacion (id_producto, tipo, path) VALUES('${id_producto}', '2', '${filepath}') returning id_documento`;
   try {
     const { rows } = await pool.query(sql);
     res.send({ error: "N", mensaje: "Registro sanitario ingresado correctamente", objetos: rows });
@@ -30,7 +30,8 @@ export const grabarRegistro = async (req, res) => {
 export const obtenerRegistro = async (req, res) => {
   const pool = dbSession(4);
   const { id_producto } = req.query;
-  const sql = `SELECT * FROM registro WHERE id_producto = '${id_producto}'`;
+  const sql = `SELECT * FROM documentacion WHERE id_producto = '${id_producto}' AND tipo = '2'`;
+  console.log('[SQL registro]: ', sql);
   try {
     const { rows } = await pool.query(sql);
     res.send({ error: "N", mensaje: "", objetos: rows });
@@ -44,7 +45,8 @@ export const obtenerRegistro = async (req, res) => {
 export const actualizarRegistro = async (req, res) => {
   const pool = dbSession(4);
   const { filepath, id_producto } = req.body;
-  const sql = `UPDATE registro SET path = '${filepath}', modificado_en = NOW() WHERE id_producto = '${id_producto}' RETURNING id_registro`;
+  const sql = `UPDATE documentacion SET path = '${filepath}', modificado_en = NOW() WHERE id_producto = '${id_producto}' AND tipo = '2' RETURNING id_documento`;
+  console.log('[SQL registro]: ', sql);
   try {
     const { rows } = await pool.query(sql);
     res.send({ error: "N", mensaje: "Registro sanitario actualizado correctamente", objetos: rows });
