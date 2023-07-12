@@ -12,7 +12,9 @@ import {
   actualizarArchivo,
   eliminarArchivos,
   obtenerReclamosPorEstado,
-  actualizarArchivos
+  actualizarArchivos,
+  obtenerReclamos,
+  obtenerReclamoPorCliente
 } from "./reclamo.controller";
 
 const router = Router();
@@ -32,5 +34,8 @@ router.get("/obtener_productos/", obtenerProductos);
 router.get("/obtener_reclamo_por_ruc/:ruc", obtenerReclamoPorRuc);
 router.get("/obtener_reclamos_por_estado/:estado", obtenerReclamosPorEstado);
 router.put("/actualizar_estado", actualizarEstado);
+
+router.get("/obtener_reclamos/", obtenerReclamos);
+router.get("/obtener_reclamo_por_ruc/:cliente", obtenerReclamoPorCliente);
 
 export default router;

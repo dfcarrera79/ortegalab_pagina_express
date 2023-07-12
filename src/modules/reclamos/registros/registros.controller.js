@@ -31,7 +31,6 @@ export const obtenerRegistro = async (req, res) => {
   const pool = dbSession(4);
   const { id_producto } = req.query;
   const sql = `SELECT * FROM documentacion WHERE id_producto = '${id_producto}' AND tipo = '2'`;
-  console.log('[SQL registro]: ', sql);
   try {
     const { rows } = await pool.query(sql);
     res.send({ error: "N", mensaje: "", objetos: rows });
@@ -46,7 +45,6 @@ export const actualizarRegistro = async (req, res) => {
   const pool = dbSession(4);
   const { filepath, id_producto } = req.body;
   const sql = `UPDATE documentacion SET path = '${filepath}', modificado_en = NOW() WHERE id_producto = '${id_producto}' AND tipo = '2' RETURNING id_documento`;
-  console.log('[SQL registro]: ', sql);
   try {
     const { rows } = await pool.query(sql);
     res.send({ error: "N", mensaje: "Registro sanitario actualizado correctamente", objetos: rows });

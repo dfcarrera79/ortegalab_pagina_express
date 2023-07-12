@@ -332,3 +332,81 @@ export const obtenerArchivos = async (req, res) => {
   }
 };
 
+export const obtenerReclamos = async (req, res) => {
+  const pool = dbSession(4);
+  const sql = `SELECT razon_social FROM reclamo ORDER BY fecha_reclamo`;
+  try {
+    const { rows } = await pool.query(sql);
+    res.send({ error: "N", mensaje: "", objetos: rows });
+  } catch (error) {
+    res.send({ error: "S", mensaje: deducirMensajeError(error) });
+  } finally {
+    pool.end();
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const obtenerReclamoPorCliente = async (req, res) => {
+  const { codigo_empresa } = req.headers;
+  const pool = dbSession(codigo_empresa);
+  const cliente = req.params.cliente;
+  const estado = req.query.estado;
+  const desde = req.query.desde;
+  const hasta = req.query.hasta;
+
+  let sql = `SELECT reclamo.estado, ruc_reclamante, reclamo.no_factura, reclamo.id_reclamo, reclamo.fecha_reclamo, reclamo.fecha_factura, reclamo.fecha_reclamo, nombre_reclamante, id_detalle, reclamo.nombre_usuario, reclamo.fecha_enproceso, reclamo.fecha_finalizado, reclamo.respuesta_finalizado, reclamos
+  FROM detalle_reclamo 
+  JOIN reclamo ON detalle_reclamo.id_reclamo = reclamo.id_reclamo 
+  WHERE reclamo.razon_social='${cliente}'`;
+
+  if (estado !== undefined) {
+    sql += ` AND reclamo.estado LIKE '${estado}'`;
+  }
+
+  if (desde !== undefined && desde !== '' && hasta !== undefined && hasta !== '') {
+    sql += `AND CAST(reclamo.fecha_reclamo AS DATE) BETWEEN '${desde}' AND '${hasta}'`;
+  }
+
+  sql += ` ORDER BY id_reclamo`;
+
+  try {
+    const { rows } = await pool.query(sql);
+
+    if (rows[0] !== undefined) {
+      const { ruc_reclamante, fecha_factura } = rows[0];
+      const reclamo = {
+        fecha_factura,
+        ruc_reclamante,
+        detalles: rows,
+      };
+
+      res.send({ error: "N", mensaje: "", objetos: reclamo });
+    } else {
+      res.send({
+        error: "N",
+        mensaje: "",
+        objetos: 0,
+      });
+    }
+  } catch (error) {
+    res.send({ error: "S", mensaje: deducirMensajeError(error) });
+  } finally {
+    pool.end();
+  }
+};

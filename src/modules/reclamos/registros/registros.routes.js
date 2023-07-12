@@ -3,7 +3,7 @@ import {
   subirRegistro,
   grabarRegistro,
   actualizarRegistro,
-  obtenerRegistro
+  obtenerRegistro,
 } from "./registros.controller";
 
 const router = Router();
