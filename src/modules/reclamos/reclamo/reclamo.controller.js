@@ -156,8 +156,10 @@ export const obtenerReclamosPorEstado = async (req, res) => {
   const estado = req.params.estado;
   const factura = req.query.factura;
   const ruc = req.query.ruc;
+  const cliente = req.query.cliente;
   const desde = req.query.desde;
   const hasta = req.query.hasta;
+
 
   let sql = `SELECT id_detalle, reclamo.id_reclamo, reclamo.fecha_reclamo, nombre_reclamante, ruc_reclamante, reclamo.no_factura, reclamo.fecha_factura,reclamo.fecha_enproceso, reclamo.fecha_finalizado, reclamo.respuesta_finalizado, reclamo.nombre_usuario, reclamo.email, reclamos
   FROM detalle_reclamo 
@@ -172,6 +174,10 @@ export const obtenerReclamosPorEstado = async (req, res) => {
     sql += ` AND reclamo.ruc_cliente='${ruc}'`;
   }
 
+  if (cliente !== undefined && cliente !== '') {
+    sql += ` AND reclamo.razon_social LIKE '${cliente}'`;
+  }
+
   if (desde !== undefined && desde !== '' && hasta !== undefined && hasta !== '') {
     sql += ` AND CAST(reclamo.fecha_reclamo AS DATE) BETWEEN '${desde}' AND '${hasta}'`;
   } 
@@ -183,11 +189,6 @@ export const obtenerReclamosPorEstado = async (req, res) => {
 
     if (rows[0] !== undefined) {
       const { ruc_reclamante, fecha_factura } = rows[0];
-      const reclamo = {
-        fecha_factura,
-        ruc_reclamante,
-        detalles: rows,
-      };
 
       res.send({ error: "N", mensaje: "", objetos: rows });
     } else {

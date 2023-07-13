@@ -36,6 +36,6 @@ router.get("/obtener_reclamos_por_estado/:estado", obtenerReclamosPorEstado);
 router.put("/actualizar_estado", actualizarEstado);
 
 router.get("/obtener_reclamos/", obtenerReclamos);
-router.get("/obtener_reclamo_por_ruc/:cliente", obtenerReclamoPorCliente);
+router.get("/obtener_reclamo_por_cliente/:cliente", obtenerReclamoPorCliente);
 
 export default router;
