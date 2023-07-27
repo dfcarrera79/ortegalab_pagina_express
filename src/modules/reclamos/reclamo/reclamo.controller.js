@@ -160,7 +160,6 @@ export const obtenerReclamosPorEstado = async (req, res) => {
   const desde = req.query.desde;
   const hasta = req.query.hasta;
 
-
   let sql = `SELECT id_detalle, reclamo.id_reclamo, reclamo.fecha_reclamo, nombre_reclamante, ruc_reclamante, reclamo.no_factura, reclamo.fecha_factura,reclamo.fecha_enproceso, reclamo.fecha_finalizado, reclamo.respuesta_finalizado, reclamo.nombre_usuario, reclamo.email, reclamos
   FROM detalle_reclamo 
   JOIN reclamo ON detalle_reclamo.id_reclamo = reclamo.id_reclamo 
@@ -174,7 +173,7 @@ export const obtenerReclamosPorEstado = async (req, res) => {
     sql += ` AND reclamo.ruc_cliente='${ruc}'`;
   }
 
-  if (cliente !== undefined && cliente !== '') {
+  if (cliente !== undefined && cliente !== '' && cliente !== 'null') {
     sql += ` AND reclamo.razon_social LIKE '${cliente}'`;
   }
 
