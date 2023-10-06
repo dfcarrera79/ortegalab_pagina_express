@@ -81,6 +81,43 @@ export const enviarEmail = async (payload) => {
   }    
 }
 
+export const enviarEmailReclamo = async (payload) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: 'mail.apromedloja.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: 'reclamos@apromedloja.com',
+        pass: 'reclamos.apromed'
+      },
+      tls: {                    
+        rejectUnauthorized: false,
+      },
+    });     
+    
+    const sendMailPromise = new Promise((resolve, reject) => {
+      transporter.sendMail({
+        from: payload.from,
+        to: payload.emails,
+        subject: payload.subject,
+        html: payload.message
+      }, (error, info) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(info);
+        }
+      });
+    });
+
+    await sendMailPromise;
+    return { ok: true, mensaje: '' };        
+  } catch (error) {
+    return { ok: false, id: undefined, mensaje: deducirMensajeError(error) };        
+  }    
+}
+
 export function codify(_value) {
     _value = _value.trim();
     let posicionRecorrido = 0;

@@ -7,6 +7,7 @@ import {
   registrarArchivo,
   obtenerArchivos,
   obtenerProductos,
+  obtenerNumeroDePaginas,
   obtenerReclamoPorRuc,
   actualizarEstado,
   actualizarArchivo,
@@ -14,10 +15,13 @@ import {
   obtenerReclamosPorEstado,
   actualizarArchivos,
   obtenerReclamos,
-  obtenerReclamoPorCliente
+  obtenerReclamoPorCliente,
+  respuestaReclamo
 } from "./reclamo.controller";
 
 const router = Router();
+
+router.put("/respuestaReclamo", respuestaReclamo)
 
 router.post("/crear_detalle", crearDetalle);
 router.post("/subir_fotos/:id", subirFotos);
@@ -32,6 +36,7 @@ router.put("/actualizar_archivos", actualizarArchivos);
 
 router.get("/obtener_productos/", obtenerProductos);
 router.get("/obtener_reclamo_por_ruc/:ruc", obtenerReclamoPorRuc);
+router.get("/obtener_paginas/:estado", obtenerNumeroDePaginas);
 router.get("/obtener_reclamos_por_estado/:estado", obtenerReclamosPorEstado);
 router.put("/actualizar_estado", actualizarEstado);
 

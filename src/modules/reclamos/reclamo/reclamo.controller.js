@@ -1,7 +1,68 @@
 import dbSession from "../../../pool";
-import { deducirMensajeError, formatoFecha } from "../../../utils";
+import { deducirMensajeError, formatoFecha, enviarEmailReclamo } from "../../../utils";
 import formidable from "formidable";
 import path from "path";
+
+export const respuestaReclamo = async (req, res) => {
+  const pool = dbSession(4);
+  try {
+  const data = req.body;
+  const { email, respuesta } = data;
+
+  const subject = 'APROMED: Respuesta a su reclamo';
+  const message = `
+    <html lang="es">
+      <head>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+      </head>
+      <body>
+        <div class="card" style="max-width: 18rem; margin: 0 auto; margin-top: 20px; border: 1px solid rgba(0,0,0,.125); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.5;">
+          <div class="card-header" style="background-color: #f8f9fa; border-bottom: 1px solid rgba(0,0,0,.125); padding: .75rem 1.25rem;">
+            <img src="http://apromedloja.com/assets/logo_apromed.448c2c5f.png" alt="Apromed Logo" style="height: 50px; width: 100px;">
+                <h5 style="color: #636466;">RECLAMOS APP</h5> 
+          </div>
+
+          <div class="card-body" style="padding: 1.25rem;">
+            <h5 class="card-title" style="color: #636466">Por favor, no responda a este correo.</h5>
+            <p>Estimado/a.</p>
+            <p class="card-text">En respuesta a su reclamo:</p>
+            <p>${respuesta}</p>
+            <p class="card-text">También puedes consultar el estado de tu raclamo online:</p>
+            <a href="https://apromedfarmaloja-cloud.com:3008/#/login/1" class="btn btn-outline-primary" style="text-decoration: none; color: #007bff; background-color: transparent; border-color: #007bff; display: inline-block; font-weight: 400; text-align: center; white-space: nowrap; vertical-align: middle; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; border: 1px solid #007bff; padding: .375rem .75rem; font-size: 16px; line-height: 1.5; border-radius: .25rem;">Ir a Reclamos App</a>
+          </div>
+          <div class="card-footer text-body-secondary" style="background-color: #f8f9fa; border-top: 1px solid rgba(0,0,0,.125); padding: .75rem 1.25rem;">
+            <p>Reclamos App<br>
+              Apromed S.A.S.<br>
+              <a href="http://apromedloja.com/">http://apromedloja.com</a>
+            </p>
+          </div>
+        </div>  
+      </body>
+    </html>
+    `;
+
+
+    const payload = {
+      from: '"Apromed S.A.S." <reclamos@apromedloja.com>',
+      emails: email,
+      subject,
+      message,
+      codigo_empresa: 5,
+    };
+
+    const response = await enviarEmailReclamo(payload);
+
+
+    if (response.ok) {
+      // Assuming you have an active database connection/session
+      res.send({ error: "N", mensaje: `Respuesta a reclamo enviada al correo ${email}`, objetos: '' });
+    }
+  } catch (error) {
+    return { error: "S", mensaje: deducirMensajeError(error) };
+  } finally {
+    pool.end();
+  }  
+};
 
 const obtenerFactura = async (ruc_cliente, numero_factura) => {
   const pool = dbSession(5);
@@ -150,6 +211,58 @@ export const obtenerReclamoPorRuc = async (req, res) => {
   }
 };
 
+export const obtenerNumeroDePaginas = async (req, res) => {
+  const pool = dbSession(4);
+  const estado = req.params.estado;
+  const factura = req.query.factura;
+  const ruc = req.query.ruc;
+  const cliente = req.query.cliente;
+  const desde = req.query.desde;
+  const hasta = req.query.hasta;
+
+  let sql =  `SELECT COUNT(*) AS num_registros FROM detalle_reclamo JOIN reclamo ON detalle_reclamo.id_reclamo = reclamo.id_reclamo WHERE reclamo.estado LIKE '${estado}'`
+
+  if (factura !== undefined && factura !== '') {
+    sql += ` AND reclamo.no_factura LIKE '${factura}'`;
+  }
+
+  if (ruc !== undefined && factura !== '') {
+    sql += ` AND reclamo.ruc_cliente='${ruc}'`;
+  }
+
+  if (cliente !== undefined && cliente !== '' && cliente !== 'null') {
+    sql += ` AND reclamo.razon_social LIKE '${cliente}'`;
+  }
+
+  if (desde !== undefined && desde !== '' && hasta !== undefined && hasta !== '') {
+    sql += ` AND CAST(reclamo.fecha_reclamo AS DATE) BETWEEN '${desde}' AND '${hasta}'`;
+  } 
+
+  console.log('[SQL]: ', sql);
+
+  try {
+    const { rows } = await pool.query(sql);
+    console.log('[NUMERO DE REGISTROS]: ', rows[0].num_registros);
+    if (rows.length === 0) {
+      res.send({
+        error: "S",
+        mensaje: ''
+      });
+    } else {
+      res.send({
+        error: "N",
+        mensaje: "",
+        objetos: rows[0].num_registros,
+      });
+    }
+  } catch (error) {
+    res.send({ error: "S", mensaje: deducirMensajeError(error) });
+  } finally {
+    pool.end();
+  }
+
+};
+
 export const obtenerReclamosPorEstado = async (req, res) => {
   const { codigo_empresa } = req.headers;
   const pool = dbSession(codigo_empresa);
@@ -159,6 +272,10 @@ export const obtenerReclamosPorEstado = async (req, res) => {
   const cliente = req.query.cliente;
   const desde = req.query.desde;
   const hasta = req.query.hasta;
+  const numeroDePagina = req.query.numeroDePagina;
+  const registrosPorPagina = req.query.registrosPorPagina;
+
+  let offset = (numeroDePagina - 1) * registrosPorPagina;
 
   let sql = `SELECT id_detalle, reclamo.id_reclamo, reclamo.fecha_reclamo, nombre_reclamante, ruc_reclamante, reclamo.no_factura, reclamo.fecha_factura,reclamo.fecha_enproceso, reclamo.fecha_finalizado, reclamo.respuesta_finalizado, reclamo.nombre_usuario, reclamo.email, reclamos
   FROM detalle_reclamo 
@@ -181,14 +298,13 @@ export const obtenerReclamosPorEstado = async (req, res) => {
     sql += ` AND CAST(reclamo.fecha_reclamo AS DATE) BETWEEN '${desde}' AND '${hasta}'`;
   } 
 
-  sql += ` ORDER BY id_reclamo`;
+  sql += ` ORDER BY id_reclamo OFFSET ${offset} ROWS FETCH FIRST ${registrosPorPagina} ROWS ONLY`;
+
 
   try {
     const { rows } = await pool.query(sql);
-
+    // console.log('[ROWS]: ', JSON.stringify(rows));
     if (rows[0] !== undefined) {
-      const { ruc_reclamante, fecha_factura } = rows[0];
-
       res.send({ error: "N", mensaje: "", objetos: rows });
     } else {
       res.send({
@@ -344,22 +460,6 @@ export const obtenerReclamos = async (req, res) => {
     pool.end();
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 export const obtenerReclamoPorCliente = async (req, res) => {
