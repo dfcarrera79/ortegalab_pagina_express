@@ -9,6 +9,7 @@ export const respuestaReclamo = async (req, res) => {
   const data = req.body;
   const { email, respuesta } = data;
 
+
   const subject = 'APROMED: Respuesta a su reclamo';
   const message = `
     <html lang="es">
@@ -238,11 +239,8 @@ export const obtenerNumeroDePaginas = async (req, res) => {
     sql += ` AND CAST(reclamo.fecha_reclamo AS DATE) BETWEEN '${desde}' AND '${hasta}'`;
   } 
 
-  console.log('[SQL]: ', sql);
-
   try {
     const { rows } = await pool.query(sql);
-    console.log('[NUMERO DE REGISTROS]: ', rows[0].num_registros);
     if (rows.length === 0) {
       res.send({
         error: "S",
@@ -303,7 +301,6 @@ export const obtenerReclamosPorEstado = async (req, res) => {
 
   try {
     const { rows } = await pool.query(sql);
-    // console.log('[ROWS]: ', JSON.stringify(rows));
     if (rows[0] !== undefined) {
       res.send({ error: "N", mensaje: "", objetos: rows });
     } else {
@@ -324,6 +321,7 @@ export const actualizarEstado = async (req, res) => {
   const pool = dbSession(4);
   const { id_reclamo, estado, login_usuario, nombre_usuario, respuesta_finalizado } = req.body;
 
+
   let sql = "";
 
   if (estado === "PEN") {
@@ -339,6 +337,7 @@ export const actualizarEstado = async (req, res) => {
     const fecha = new Date().toISOString();
     sql = `UPDATE reclamo SET estado='FIN', fecha_finalizado='${fecha}', login_usuario='${login_usuario}', nombre_usuario='${nombre_usuario}', respuesta_finalizado='${respuesta_finalizado}' WHERE id_reclamo='${id_reclamo}' RETURNING id_reclamo`;
   }
+
 
   try {
     const { rows } = await pool.query(sql);
