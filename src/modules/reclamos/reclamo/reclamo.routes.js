@@ -8,10 +8,12 @@ import {
   obtenerArchivos,
   obtenerProductos,
   obtenerNumeroDePaginas,
+  obtenerNumeroDeProductos,
   obtenerReclamoPorRuc,
   actualizarEstado,
   actualizarArchivo,
   eliminarArchivos,
+  obtenerSoloProductos,
   obtenerReclamosPorEstado,
   actualizarArchivos,
   obtenerReclamos,
@@ -34,6 +36,8 @@ router.get("/obtener_archivos/:id", obtenerArchivos);
 router.delete("/eliminar_archivos", eliminarArchivos);
 router.put("/actualizar_archivos", actualizarArchivos);
 
+router.get("/obtener_solo_productos/", obtenerSoloProductos);
+router.get("/obtener_numero_productos", obtenerNumeroDeProductos);
 router.get("/obtener_productos/", obtenerProductos);
 router.get("/obtener_reclamo_por_ruc/:ruc", obtenerReclamoPorRuc);
 router.get("/obtener_paginas/:estado", obtenerNumeroDePaginas);

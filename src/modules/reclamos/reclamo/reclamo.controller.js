@@ -90,6 +90,45 @@ const obtenerFactura = async (ruc_cliente, numero_factura) => {
   }
 };
 
+export const obtenerSoloProductos = async (req, res) => {
+  const pool = dbSession(5);
+  const nombre = req.query.nombre;
+  const numeroDePagina = req.query.numeroDePagina;
+  const registrosPorPagina = req.query.registrosPorPagina;
+  let offset = (numeroDePagina - 1) * registrosPorPagina;
+  let sql = `SELECT TArticulo.art_codigo, TArticulo.art_nomlar FROM articulo.TArticulo`;
+
+  if (nombre !== undefined && nombre !== '') {
+    sql += ` WHERE TArticulo.art_nomlar LIKE '%${nombre.trim()}%'`;
+  }
+
+  sql += ` ORDER BY TArticulo.art_nomlar OFFSET ${offset} ROWS FETCH FIRST ${registrosPorPagina} ROWS ONLY`
+
+  try {
+    const { rows } = await pool.query(sql);
+
+    res.send({ error: "N", mensaje: "", objetos: rows });
+    
+  } catch (error) {
+    res.send({ error: "S", mensaje: deducirMensajeError(error) });
+  } finally {
+    pool.end();
+  }
+}
+
+export const obtenerNumeroDeProductos = async (req, res) => {
+  const pool = dbSession(5);
+  const sql = `SELECT COUNT(*) AS num_productos FROM articulo.TArticulo`;
+  try {
+    const { rows } = await pool.query(sql);
+    res.send({ error: "N", mensaje: "", objetos: rows });
+  } catch (error) {
+    res.send({ error: "S", mensaje: deducirMensajeError(error) });
+  } finally {
+    pool.end();
+  }
+}
+
 export const obtenerProductos = async (req, res) => {
   const pool = dbSession(5);
   const ruc_reclamante = req.query.ruc_reclamante;
@@ -218,6 +257,7 @@ export const obtenerNumeroDePaginas = async (req, res) => {
   const factura = req.query.factura;
   const ruc = req.query.ruc;
   const cliente = req.query.cliente;
+  const producto = req.query.producto;
   const desde = req.query.desde;
   const hasta = req.query.hasta;
 
@@ -233,6 +273,10 @@ export const obtenerNumeroDePaginas = async (req, res) => {
 
   if (cliente !== undefined && cliente !== '' && cliente !== 'null') {
     sql += ` AND reclamo.razon_social LIKE '${cliente}'`;
+  }
+
+  if (producto !== undefined && producto !== '' && producto !== 'null' && producto !== 0) {
+    sql += ` AND EXISTS (SELECT * FROM jsonb_array_elements(detalle_reclamo.reclamos) AS reclamo_json WHERE (reclamo_json->'producto'->>'id')::int = ${producto})`;
   }
 
   if (desde !== undefined && desde !== '' && hasta !== undefined && hasta !== '') {
@@ -268,6 +312,7 @@ export const obtenerReclamosPorEstado = async (req, res) => {
   const factura = req.query.factura;
   const ruc = req.query.ruc;
   const cliente = req.query.cliente;
+  const producto = req.query.producto;
   const desde = req.query.desde;
   const hasta = req.query.hasta;
   const numeroDePagina = req.query.numeroDePagina;
@@ -292,12 +337,15 @@ export const obtenerReclamosPorEstado = async (req, res) => {
     sql += ` AND reclamo.razon_social LIKE '${cliente}'`;
   }
 
+  if (producto !== undefined && producto !== '' && producto !== 'null' && producto !== 0) {
+    sql += ` AND EXISTS (SELECT * FROM jsonb_array_elements(detalle_reclamo.reclamos) AS reclamo_json WHERE (reclamo_json->'producto'->>'id')::int = ${producto})`;
+  }
+
   if (desde !== undefined && desde !== '' && hasta !== undefined && hasta !== '') {
     sql += ` AND CAST(reclamo.fecha_reclamo AS DATE) BETWEEN '${desde}' AND '${hasta}'`;
   } 
 
-  sql += ` ORDER BY id_reclamo OFFSET ${offset} ROWS FETCH FIRST ${registrosPorPagina} ROWS ONLY`;
-
+  sql += ` ORDER BY detalle_reclamo.id_reclamo OFFSET ${offset} ROWS FETCH FIRST ${registrosPorPagina} ROWS ONLY`;
 
   try {
     const { rows } = await pool.query(sql);
@@ -449,7 +497,7 @@ export const obtenerArchivos = async (req, res) => {
 
 export const obtenerReclamos = async (req, res) => {
   const pool = dbSession(4);
-  const sql = `SELECT razon_social FROM reclamo ORDER BY fecha_reclamo`;
+  const sql = `SELECT DISTINCT razon_social FROM reclamo ORDER BY razon_social`;
   try {
     const { rows } = await pool.query(sql);
     res.send({ error: "N", mensaje: "", objetos: rows });
