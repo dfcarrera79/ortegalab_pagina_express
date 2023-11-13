@@ -275,7 +275,7 @@ export const obtenerNumeroDePaginas = async (req, res) => {
     sql += ` AND reclamo.razon_social LIKE '${cliente}'`;
   }
 
-  if (producto !== undefined && producto !== '' && producto !== 'null' && producto !== 0) {
+  if (producto !== undefined && producto !== '' && producto !== 'null' && producto !== '0' && producto !== 0) {
     sql += ` AND EXISTS (SELECT * FROM jsonb_array_elements(detalle_reclamo.reclamos) AS reclamo_json WHERE (reclamo_json->'producto'->>'id')::int = ${producto})`;
   }
 
@@ -337,7 +337,7 @@ export const obtenerReclamosPorEstado = async (req, res) => {
     sql += ` AND reclamo.razon_social LIKE '${cliente}'`;
   }
 
-  if (producto !== undefined && producto !== '' && producto !== 'null' && producto !== 0) {
+  if (producto !== undefined && producto !== '' && producto !== 'null' && producto !== '0' && producto !== 0) {
     sql += ` AND EXISTS (SELECT * FROM jsonb_array_elements(detalle_reclamo.reclamos) AS reclamo_json WHERE (reclamo_json->'producto'->>'id')::int = ${producto})`;
   }
 
