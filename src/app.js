@@ -2,19 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 
-// Imports para la app de socios de cooperativas de transportes
-import SocioRoutes from './modules/socios/socio/socio.routes';
-import BoleteriaRoutes from './modules/socios/boleteria/boleteria.routes';
-import EncomiendasRoutes from './modules/socios/encomiendas/encomiendas.routes';
-import CreditosRoutes from './modules/socios/creditos/creditos.routes';
-
 // Imports para la app de reclamos
-import MotivoRoutes from './modules/reclamos/motivo/motivo.routes';
-import ReclamoRoutes from './modules/reclamos/reclamo/reclamo.routes';
-import UsuarioRoutes from './modules/reclamos/usuario/usuario.routes';
-import ArchivosRoutes from './modules/reclamos/archivos/archivos.routes';
-import DocumentosRoutes from './modules/reclamos/documentos/documentos.routes';
-import RegistrosRoutes from './modules/reclamos/registros/registros.routes';
+import CorreoRoutes from './modules/enviarCorreo/correo.routes';
 
 const morgan = require('morgan');
 // const formidable = require('formidable');
@@ -29,10 +18,6 @@ const configApp = JSON.parse(rawdata);
 app.use(morgan('tiny'));
 app.use(cors());
 app.use(express.json());
-app.use('/static', express.static(path.join(__dirname, '../public/imagenes_reclamos')))
-app.use('/static', express.static(path.join(__dirname, '../public/documentos')))
-// app.use('/static', express.static('public'))
-// app.use(formidable);
 
 var bodyParser = require('body-parser');
 var jsonParser = bodyParser.json({limit:1024*1024*20, type:'application/json'});
@@ -41,19 +26,8 @@ app.use(jsonParser);
 app.use(urlencodedParser);
 app.use(express.urlencoded({extended:true}));
 
-// routes para la app de socios de cooperativas de transportes
-app.use('/v1/socios/usuario/', SocioRoutes);
-app.use('/v1/socios/boleteria/', BoleteriaRoutes);
-app.use('/v1/socios/encomiendas/', EncomiendasRoutes);
-app.use('/v1/socios/creditos/', CreditosRoutes);
-
 // routes para la app de reclamos Apromed
-app.use('/v1/reclamos/motivo', MotivoRoutes);
-app.use('/v1/reclamos/reclamo', ReclamoRoutes);
-app.use('/v1/reclamos/usuario', UsuarioRoutes);
-app.use('/v1/reclamos/archivos', ArchivosRoutes);
-app.use('/v1/reclamos/documentos', DocumentosRoutes);
-app.use('/v1/reclamos/registros', RegistrosRoutes);
+app.use('/enviar_correo', CorreoRoutes);
 
 // Init app
 const port = process.env.PORT || configApp.port_http;
