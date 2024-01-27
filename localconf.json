@@ -1,0 +1,96 @@
+{   
+    "port_http": 3009,
+    "ssl": "true",
+    "port_ssl": 3010,
+    "dir_cert": "/opt/sage-erp/cert",
+    "filename_key": "keycertloxa.key",
+    "filename_cert": "ef7d24eaa7ef9b3.pem",
+    "filename_ca": "gd_bundle-g2-g1.crt",
+    "databases": [
+        {
+            "codigo_empresa":1,
+            "host":"181.198.60.138",
+            "port":"5432",
+            "database":"coop_pinas",        
+            "user":"postgres",
+            "password":"cooppinas2017",        
+            "max":20,
+            "url_redirect":"http://localhost:3008/#/login",
+            "email":{                
+                "host":"smtp.gmail.com",
+                "port":587,
+                "secure":false,
+                "user":"loxacloud.soporte@gmail.com",
+                "password":"fzacuagyvlrknbkv"
+            }
+        },
+        {
+            "codigo_empresa":2,
+            "host":"45.71.203.149",
+            "port":"5432",
+            "database":"tac",        
+            "user":"postgres",
+            "password":"svrdelfin01061979",        
+            "max":20,
+            "url_redirect":"http://localhost:3008/#/login",
+            "email":{                
+                "host":"smtp.gmail.com",
+                "port":587,
+                "secure":false,
+                "user":"loxacloud.soporte@gmail.com",
+                "password":"fzacuagyvlrknbkv"
+            }
+        },
+        {
+            "codigo_empresa":3,
+            "host":"181.39.106.50",
+            "port":"5433",
+            "database":"cifa_internacional",        
+            "user":"postgres",
+            "password":"svrdelfin01061979",        
+            "max":20,
+            "url_redirect":"http://localhost:3008/#/login",
+            "email":{                
+                "host":"smtp.gmail.com",
+                "port":587,
+                "secure":false,
+                "user":"loxacloud.soporte@gmail.com",
+                "password":"fzacuagyvlrknbkv"
+            }
+        },
+        {
+            "codigo_empresa":4,
+            "host":"127.0.0.1",
+            "port":"5432",
+            "database":"reclamos",        
+            "user":"postgres",
+            "password":"01061979",        
+            "max":20,
+            "url_redirect":"http://localhost:3008/#/login",
+            "email":{                
+                "host":"smtp.gmail.com",
+                "port":587,
+                "secure":false,
+                "user":"loxacloud.soporte@gmail.com",
+                "password":"fzacuagyvlrknbkv"
+            }
+        },
+        {
+            "codigo_empresa":5,
+            "host":"127.0.0.1",
+            "port":"5432",
+            "database":"apromed",        
+            "user":"postgres",
+            "password":"01061979",        
+            "max":20,
+            "url_redirect":"http://localhost:3008/#/login",
+            "email":{                
+                "host":"smtp.gmail.com",
+                "port":587,
+                "secure":false,
+                "user":"loxacloud.soporte@gmail.com",
+                "password":"fzacuagyvlrknbkv"
+            }
+        }
+    ]        
+}
